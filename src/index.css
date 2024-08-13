@@ -16,7 +16,6 @@
 body {
   margin: 0;
   display: grid;
-  align-items: center;
   min-width: 100vw;
   min-height: 100vh;
 }
@@ -27,6 +26,10 @@ body {
     background-color: #ffffff;
   }
 }
+#piano {
+  clip-path: inset(15px 0px 0px 0px);
+  margin-top: -15px;
+}
 .white-key {
   stroke: #555555;
   fill: #fffff7;
@@ -35,17 +38,10 @@ body {
   stroke: #979797;
   fill: #4b4b4b;
 }
-.white-key-text {
-  font-size: 1.3em;
-  pointer-events: none;
-  user-select: none;
-}
-.black-key-text {
-  font-size: 1em;
-  fill: #fff;
-  font-weight: 200;
-  pointer-events: none;
-  user-select: none;
+
+.white-key,
+.black-key {
+  transition: fill 0.5s ease;
 }
 
 .white-key-text {
@@ -59,4 +55,12 @@ body {
   font-weight: 200;
   pointer-events: none;
   user-select: none;
+}
+
+.active {
+  fill: #ff10f0;
+}
+
+.active.black-key ~ text {
+  fill: #000;
 }

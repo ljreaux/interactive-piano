@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { sounds, Sounds } from "../data/sounds";
+
 const getAllNaturalNotes = ([firstNote, lastNote]: string[]) => {
   const firstNoteName = firstNote[0];
   const firstOctaveNumber = parseInt(firstNote[1]);
@@ -44,12 +47,19 @@ const naturalNotesFlats = ["D", "E", "G", "A", "B"];
 
 export default function Piano({
   range = ["C4", "C6"],
-  options = { keyHeight: "medium", keyWidth: "medium" },
+  options = {
+    keyHeight: "medium",
+    keyWidth: "medium",
+    showLetters: true,
+    roundedKeys: true,
+  },
 }: {
   range?: string[];
   options?: {
     keyHeight: Size;
     keyWidth: Size;
+    showLetters?: boolean;
+    roundedKeys?: boolean;
   };
 }) {
   const keySizes = {
@@ -76,9 +86,13 @@ export default function Piano({
       height: pianoHeight,
       pos: { posX, posY: 380 },
       text: note,
+      options: {
+        showLetters: options.showLetters,
+        rounded: options.roundedKeys,
+      },
     };
 
-    keys.push(whiteKey);
+    keys.push(whiteKey as KeyProps);
     posX += whiteKeyWidth;
   });
 
@@ -87,8 +101,8 @@ export default function Piano({
   allNaturalNotes.forEach((note, i, arr) => {
     if (i === arr.length - 1) return;
     naturalNotesSharps.forEach((sharp, j) => {
-      const flatNoteName = `${naturalNotesFlats[j]}b`;
-      const sharpNoteName = `${sharp}#`;
+      const flatNoteName = `${naturalNotesFlats[j]}b${note[1]}`;
+      const sharpNoteName = `${sharp}#${note[1]}`;
       const blackKey = {
         width: whiteKeyWidth / 2,
         height: pianoHeight * (3 / 5),
@@ -100,9 +114,11 @@ export default function Piano({
             "data-sharp": sharpNoteName,
             "data-flat": flatNoteName,
           },
+          showLetters: options.showLetters,
+          rounded: options.roundedKeys,
         },
       };
-      console.log(bkPosX);
+
       if (sharp === note[0]) keys.push(blackKey as KeyProps);
     });
 
@@ -116,6 +132,7 @@ export default function Piano({
 
   return (
     <svg
+      id="piano"
       width="100%"
       version="1.1"
       xmlns="http://w3.org/2000/svg"
@@ -137,15 +154,39 @@ const Key = ({
   type = "white-key",
   options,
 }: KeyProps) => {
+  const [active, setActive] = useState(false);
+  const [audio, setAudio] = useState<null | HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const pathName: keyof Sounds =
+      (text.length === 3 ? options?.dataAttr?.["data-flat"] : text) || "";
+
+    const audioElement = new Audio(sounds[pathName]);
+    setAudio(audioElement);
+    audioElement.addEventListener("ended", () => setActive(false));
+  }, []);
+
+  const roundedRadius =
+    options?.rounded && type === "white-key" ? 15 : options?.rounded ? 8 : 0;
+
   return (
     <g width={width} height={height}>
       <rect
-        className={type}
+        className={`${type} ${active ? "active" : ""}`}
         width={width}
         height={height}
         x={pos.posX}
+        rx={roundedRadius}
+        ry={roundedRadius}
         data-note-name={text}
         {...options?.dataAttr}
+        onClick={() => {
+          console.log(`Clicked on ${text}`);
+          setActive(true);
+          if (audio) {
+            audio.play();
+          }
+        }}
       />
       <text
         x={pos.posX + width / 2}
@@ -153,9 +194,9 @@ const Key = ({
         textAnchor="middle"
         className={`${type}-text`}
       >
-        {text}
+        {options?.showLetters && text}
       </text>
-      {options && (
+      {options?.showLetters && options?.dataAttr && (
         <text
           x={pos.posX + width / 2}
           y={pos.posY + 20}
@@ -176,7 +217,9 @@ type KeyProps = {
   text: string;
   type?: "black-key" | "white-key";
   options?: {
-    dataAttr: { "data-sharp": string; "data-flat": string };
+    dataAttr?: { "data-sharp": string; "data-flat": string };
+    showLetters?: boolean;
+    rounded?: boolean;
   };
 };
 
